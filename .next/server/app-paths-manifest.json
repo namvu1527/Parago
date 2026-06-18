@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/home/page": "app/home/page.js",
+  "/messages/[id]/page": "app/messages/[id]/page.js",
+  "/messages/page": "app/messages/page.js",
+  "/page": "app/page.js",
+  "/premium/page": "app/premium/page.js",
+  "/profile/page": "app/profile/page.js",
+  "/rides/[id]/page": "app/rides/[id]/page.js",
+  "/rides/page": "app/rides/page.js"
+}
