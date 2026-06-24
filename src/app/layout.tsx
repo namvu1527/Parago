@@ -46,6 +46,11 @@ export const viewport: Viewport = {
   ],
 };
 
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { AuthGuard } from "@/components/providers/auth-guard";
+import { NotificationProvider } from "@/components/providers/notification-provider";
+import { GlobalApiErrorBoundary } from "@/components/ui";
+
 export default function RootLayout({
   children,
 }: {
@@ -58,7 +63,17 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <AuthProvider>
+          <AuthGuard>
+            <NotificationProvider>
+              <ThemeProvider>
+                <GlobalApiErrorBoundary>
+                  {children}
+                </GlobalApiErrorBoundary>
+              </ThemeProvider>
+            </NotificationProvider>
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -1,64 +1,113 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, Input, Button } from "@/components/ui";
-import { mockConversations, mockMessages, mockRides, currentUser } from "@/lib/mock-data";
+import { Conversation } from "@/lib/mock-data";
 import { cn, formatCurrency } from "@/lib/utils";
-import {
-  IconChevronLeft,
-  IconPhone,
-  IconSend,
-  IconMoodSmile,
-  IconPhoto,
-  IconInfoCircle,
-  IconCar,
-} from "@tabler/icons-react";
+import { apiClient } from "@/lib/api-client";
+import { format } from "date-fns";
+import { IconChevronLeft, IconPhone, IconSend, IconMoodSmile, IconPhoto, IconInfoCircle, IconCar } from "@tabler/icons-react";
+import { useAuthStore } from "@/store/auth-store";
+import { useMessageStore } from "@/store/message-store";
+import { useMessagesSocket } from "@/hooks/useMessagesSocket";
 
 export default function ChatScreen() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
-  const conversation = mockConversations.find((c) => c.id === id) || mockConversations[0];
-  const ride = mockRides.find((r) => r.id === conversation.rideId);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const [messages, setMessages] = useState<any[]>((mockMessages as any)[id] || []);
+  const fallbackName = searchParams?.get('name') || "Unknown";
+  const fallbackAvatar = searchParams?.get('avatar') || undefined;
+
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.accessToken);
+
+  const [conversation, setConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [ride, setRide] = useState<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+
+  const { isConnected, sendMessage, markRead } = useMessagesSocket({
+    token,
+    onNewMessage: (msg) => {
+      if (msg.conversationId === id) {
+        setMessages((prev) => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          
+          // Remove the first optimistic message that matches the text
+          let replaced = false;
+          const newMessages = prev.filter(m => {
+            if (!replaced && m.id.toString().startsWith('temp-') && m.text === msg.text) {
+              replaced = true;
+              return false; // remove it
+            }
+            return true;
+          });
+          
+          return [...newMessages, msg];
+        });
+        markRead(id);
+      }
+    }
+  });
+
+  useEffect(() => {
+    // Fetch initial messages
+    apiClient.get(`/conversations/${id}/messages`)
+      .then(res => {
+        setConversation(res.data.conversation);
+        const uniqueMessages = Array.from(new Map(res.data.messages.map((m: any) => [m.id, m])).values());
+        setMessages(uniqueMessages.reverse());
+        markRead(id);
+        useMessageStore.getState().fetchUnreadCount();
+      })
+      .catch(console.error);
+  }, [id]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  useEffect(() => {
+    if (conversation?.rideId) {
+      apiClient.get(`/rides/${conversation.rideId}`)
+        .then(res => {
+          const r = res.data;
+          const dateObj = new Date(r.departureAt);
+          setRide({
+            ...r,
+            pickupShort: r.pickupLocation.split(",")[0],
+            destinationShort: r.destinationLocation.split(",")[0],
+            departureTime: format(dateObj, "HH:mm"),
+            date: format(dateObj, "dd/MM"),
+          });
+        })
+        .catch(err => console.error("Failed to fetch ride", err));
+    }
+  }, [conversation?.rideId]);
+
   const handleSend = () => {
-    if (!inputText.trim()) return;
+    if (!inputText.trim() || !user) return;
     
-    const newMsg = {
-      id: Date.now().toString(),
-      senderId: currentUser.id,
+    // OPTIMISTIC UPDATE: Show message immediately
+    const tempMsg = {
+      id: `temp-${Date.now()}`,
+      conversationId: id,
+      senderId: user.id,
       text: inputText,
-      time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+      type: 'text',
+      createdAt: new Date().toISOString(),
+      isSending: true
     };
+    setMessages(prev => [...prev, tempMsg]);
     
-    setMessages((prev) => [...prev, newMsg]);
+    sendMessage(id, inputText, 'text');
     setInputText("");
-    
-    // Simulate reply
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          senderId: conversation.participant.id,
-          text: "Ok bạn nhé, mình hiểu rồi.",
-          time: new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
-    }, 2000);
   };
 
   return (
@@ -76,14 +125,14 @@ export default function ChatScreen() {
             <div className="flex items-center gap-3">
               <div className="relative">
                 <Avatar
-                  name={conversation.participant.name}
+                  name={conversation?.otherUser?.name || fallbackName}
+                  src={conversation?.otherUser?.avatarUrl || fallbackAvatar}
                   size="md"
-                  verified={conversation.participant.verified}
                 />
                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[var(--bg-card)] rounded-full" />
               </div>
               <div>
-                <h2 className="font-semibold text-sm text-[var(--text-heading)]">{conversation.participant.name}</h2>
+                <h2 className="font-semibold text-sm text-[var(--text-heading)]">{conversation?.otherUser?.name || fallbackName}</h2>
                 <p className="text-xs text-green-500 font-medium">Đang hoạt động</p>
               </div>
             </div>
@@ -135,8 +184,8 @@ export default function ChatScreen() {
 
           <AnimatePresence>
             {messages.map((msg: any, index: number) => {
-              const isMine = msg.senderId === currentUser.id;
-              const isSystem = msg.senderId === "system";
+              const isMine = msg.senderId === user?.id;
+              const isSystem = msg.type === "system";
               
               if (isSystem) {
                 return (
@@ -161,7 +210,7 @@ export default function ChatScreen() {
                 >
                   <div className="flex items-end gap-2 max-w-[75%]">
                     {!isMine && isLastInGroup && (
-                      <Avatar name={conversation.participant.name} size="xs" className="mb-1" />
+                      <Avatar name={conversation?.otherUser?.name || 'U'} src={conversation?.otherUser?.avatarUrl} size="xs" className="mb-1" />
                     )}
                     {!isMine && !isLastInGroup && <div className="w-6 shrink-0" />}
 
@@ -174,14 +223,15 @@ export default function ChatScreen() {
                         isMine ? "rounded-l-2xl rounded-tr-2xl" : "rounded-r-2xl rounded-tl-2xl",
                         isMine && isLastInGroup && "rounded-br-sm",
                         !isMine && isLastInGroup && "rounded-bl-sm",
+                        msg.isSending && "opacity-70"
                       )}
                     >
                       {msg.text}
                       <div className={cn(
-                        "text-[10px] text-right mt-1 opacity-70",
-                        isMine ? "text-white" : "text-[var(--text-muted)]"
+                        "text-[10px] mt-1 text-right",
+                        isMine ? "text-primary-100" : "text-[var(--text-muted)]"
                       )}>
-                        {msg.time}
+                        {new Date(msg.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     </div>
                   </div>

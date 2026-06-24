@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { AppLayout, AppHeader } from "@/components/layout";
-import { Card, Input, Button, Badge } from "@/components/ui";
+import { Card, Input, Button, Badge, LocationPicker, LocationData } from "@/components/ui";
+import { apiClient } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import {
   IconMapPin,
@@ -23,8 +25,8 @@ export default function CreateRidePage() {
   const [direction, setDirection] = useState(1);
 
   const [formData, setFormData] = useState({
-    pickup: "",
-    destination: "",
+    pickup: null as LocationData | null,
+    destination: null as LocationData | null,
     date: "",
     time: "",
     seats: 2,
@@ -40,7 +42,71 @@ export default function CreateRidePage() {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
-  const nextStep = () => {
+  const [routeInfo, setRouteInfo] = useState<{distanceText: string, durationText: string, polyline: string} | null>(null);
+  const [isEstimating, setIsEstimating] = useState(false);
+
+  const router = useRouter();
+
+  const nextStep = async () => {
+    if (step === 1) {
+      if (!formData.pickup || !formData.destination) {
+        alert("Vui lòng chọn điểm đón và điểm đến!");
+        return;
+      }
+      
+      // Fetch route estimation when advancing to step 2
+      try {
+        setIsEstimating(true);
+        const res = await apiClient.post("/maps/estimate-route", {
+          originLat: formData.pickup.lat,
+          originLng: formData.pickup.lng,
+          destLat: formData.destination.lat,
+          destLng: formData.destination.lng
+        });
+        setRouteInfo(res.data);
+      } catch (error) {
+        console.error("Lỗi khi tính toán tuyến đường:", error);
+      } finally {
+        setIsEstimating(false);
+      }
+    }
+
+    if (step === 3) {
+      // SUBMIT TO BACKEND
+      try {
+        setIsEstimating(true);
+        const payload = {
+          pickupLocation: formData.pickup?.address || "",
+          pickupLat: formData.pickup?.lat,
+          pickupLng: formData.pickup?.lng,
+          destinationLocation: formData.destination?.address || "",
+          destLat: formData.destination?.lat,
+          destLng: formData.destination?.lng,
+          distance: routeInfo?.distanceText ? parseFloat(routeInfo.distanceText.replace(',', '.')) * 1000 : 0, // quick hack to send meters
+          duration: routeInfo?.durationText ? parseInt(routeInfo.durationText) * 60 : 0, // quick hack to send seconds
+          departureAt: `${formData.date}T${formData.time}:00.000Z`,
+          seatsAvailable: formData.seats,
+          price: Number(formData.price) || 0,
+          vehicleType: formData.vehicle,
+          genderPreference: formData.gender,
+          mode: formData.mode === "gas-tip" ? "GAS_TIP" : "COMMUNITY",
+          notes: formData.notes || undefined,
+        };
+
+        const res = await apiClient.post("/rides", payload);
+        if (res.status === 201 || res.status === 200) {
+          alert("Đăng chuyến đi thành công!");
+          router.push("/home");
+        }
+      } catch (error: any) {
+        console.error("Lỗi khi đăng chuyến đi:", error);
+        alert(error.response?.data?.message || "Có lỗi xảy ra khi đăng chuyến đi. Vui lòng thử lại.");
+      } finally {
+        setIsEstimating(false);
+      }
+      return;
+    }
+
     if (step < 3) {
       setDirection(1);
       setStep(step + 1);
@@ -90,7 +156,7 @@ export default function CreateRidePage() {
   );
 
   return (
-    <AppLayout>
+    <AppLayout hideBottomNav>
       <AppHeader title="Đăng chuyến đi" showBack onBack={prevStep} />
 
       <div className="max-w-2xl mx-auto px-4 py-6 pb-24 overflow-hidden relative min-h-[80vh] flex flex-col">
@@ -116,28 +182,23 @@ export default function CreateRidePage() {
 
                 <div className="space-y-4 relative">
                   <div className="absolute left-[19px] top-10 bottom-10 w-0.5 bg-surface-200 dark:bg-surface-300 z-0" />
-                  <Input
-                    label="Điểm đón"
-                    placeholder="VD: KTX Bách Khoa"
-                    icon={<IconMapPin size={18} className="text-primary-500" />}
-                    value={formData.pickup}
-                    onChange={(e) => updateForm("pickup", e.target.value)}
-                    className="pl-12 bg-surface-50 z-10 relative"
-                  />
-                  <Input
-                    label="Điểm đến"
-                    placeholder="VD: ĐH Kinh tế Quốc dân"
-                    icon={<IconMapPin size={18} className="text-gold-500" />}
-                    value={formData.destination}
-                    onChange={(e) => updateForm("destination", e.target.value)}
-                    className="pl-12 bg-surface-50 z-10 relative"
-                  />
-                </div>
-
-                <div className="h-48 rounded-2xl bg-surface-100 dark:bg-surface-200 border border-surface-200 flex flex-col items-center justify-center text-surface-400 relative overflow-hidden">
-                  <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-                  <IconMapPin size={32} className="mb-2 text-primary-300" />
-                  <span className="text-sm font-medium z-10">Bản đồ sẽ hiển thị ở đây</span>
+                  <div className="z-20 relative">
+                    <LocationPicker
+                      label="Điểm đón"
+                      placeholder="VD: KTX Bách Khoa"
+                      value={formData.pickup || undefined}
+                      onChange={(val) => updateForm("pickup", val)}
+                      isPickup={true}
+                    />
+                  </div>
+                  <div className="z-10 relative mt-4">
+                    <LocationPicker
+                      label="Điểm đến"
+                      placeholder="VD: ĐH Kinh tế Quốc dân"
+                      value={formData.destination || undefined}
+                      onChange={(val) => updateForm("destination", val)}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -277,11 +338,24 @@ export default function CreateRidePage() {
                       <div className="w-2.5 h-2.5 rounded-full bg-gold-500" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-[var(--text-heading)]">{formData.pickup || "Điểm đón chưa nhập"}</p>
+                      <p className="text-sm font-medium text-[var(--text-heading)]">{formData.pickup?.address || "Điểm đón chưa nhập"}</p>
                       <p className="text-xs text-[var(--text-muted)] mb-3">Đón lúc {formData.time || "--:--"}, {formData.date || "--/--"}</p>
-                      <p className="text-sm font-medium text-[var(--text-heading)]">{formData.destination || "Điểm đến chưa nhập"}</p>
+                      <p className="text-sm font-medium text-[var(--text-heading)]">{formData.destination?.address || "Điểm đến chưa nhập"}</p>
                     </div>
                   </div>
+
+                  {routeInfo && (
+                    <div className="bg-primary-50 dark:bg-primary-500/10 p-3 rounded-lg flex justify-between items-center text-sm border border-primary-100 dark:border-primary-500/20">
+                      <div>
+                        <span className="text-primary-600 dark:text-primary-400 font-medium block">Khoảng cách</span>
+                        <span className="text-primary-800 dark:text-primary-300">{routeInfo.distanceText}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-primary-600 dark:text-primary-400 font-medium block">Thời gian dự kiến</span>
+                        <span className="text-primary-800 dark:text-primary-300">{routeInfo.durationText}</span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="h-px bg-surface-200 w-full" />
 
@@ -314,7 +388,7 @@ export default function CreateRidePage() {
                 Quay lại
               </Button>
             )}
-            <Button variant="primary" onClick={nextStep} className="flex-[2]">
+            <Button variant="primary" onClick={nextStep} loading={isEstimating} className="flex-[2]">
               {step === 3 ? "Đăng chuyến đi" : "Tiếp tục"}
             </Button>
           </div>

@@ -5,8 +5,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { AppLayout, AppHeader } from "@/components/layout";
 import { Card, Avatar, Badge, Input, StarRating, Skeleton, Button } from "@/components/ui";
-import { cn, formatCurrency } from "@/lib/utils";
-import { mockRides, currentUser, type Ride } from "@/lib/mock-data";
+import { cn, formatCurrency, formatRelativeTime } from "@/lib/utils";
+import { type Ride } from "@/lib/mock-data";
+import { useAuthStore } from "@/store/auth-store";
+import { apiClient } from "@/lib/api-client";
+import { format } from "date-fns";
 import {
   IconSearch,
   IconClock,
@@ -23,17 +26,22 @@ import {
 } from "@tabler/icons-react";
 
 // Shared status colors mapping
-const statusColors = {
+const statusColors: Record<string, {bg: string, text: string, label: string}> = {
   published: { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", label: "Đang mở" },
   matched: { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", label: "Đã ghép" },
   confirmed: { bg: "bg-primary-50 dark:bg-primary-500/10", text: "text-primary-600 dark:text-primary-400", label: "Đã xác nhận" },
   "in-progress": { bg: "bg-orange-50 dark:bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", label: "Đang đi" },
   completed: { bg: "bg-surface-100 dark:bg-surface-200", text: "text-text-secondary", label: "Hoàn thành" },
   cancelled: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400", label: "Đã hủy" },
+  // Real API statuses
+  PENDING: { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", label: "Đang mở" },
+  ACTIVE: { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", label: "Đã ghép" },
+  COMPLETED: { bg: "bg-surface-100 dark:bg-surface-200", text: "text-text-secondary", label: "Hoàn thành" },
+  CANCELLED: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400", label: "Đã hủy" },
 };
 
 function RideCard({ ride, index }: { ride: Ride; index: number }) {
-  const status = statusColors[ride.status];
+  const status = statusColors[ride.status] || { bg: "bg-surface-100", text: "text-text-secondary", label: ride.status || "Unknown" };
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -49,6 +57,11 @@ function RideCard({ ride, index }: { ride: Ride; index: number }) {
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-semibold text-[var(--text-heading)]">{ride.driver.name}</span>
+                  {ride.createdAt && (
+                    <span className="text-[11px] text-[var(--text-muted)] font-normal ml-1">
+                      • {formatRelativeTime(ride.createdAt)}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <StarRating rating={ride.driver.rating} size="sm" />
@@ -154,12 +167,51 @@ function RideCardSkeleton() {
 
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [rides, setRides] = useState<any[]>([]);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    // Simulate loading state
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchRides = async () => {
+      try {
+        setIsLoading(true);
+        const res = await apiClient.get("/rides?status=PENDING");
+        
+        // Map API data to UI format
+        const formattedRides = res.data.map((r: any) => {
+          const dateObj = new Date(r.departureAt);
+          return {
+            ...r,
+            pickupShort: r.pickupLocation.split(",")[0],
+            pickup: r.pickupLocation,
+            destinationShort: r.destinationLocation.split(",")[0],
+            destination: r.destinationLocation,
+            departureTime: format(dateObj, "HH:mm"),
+            date: format(dateObj, "dd/MM"),
+            createdAt: r.createdAt,
+            seats: r.totalSeats,
+            distance: typeof r.distance === 'number' && !isNaN(r.distance) ? `${(r.distance / 1000).toFixed(1)} km` : "--",
+            mode: r.mode === "GAS_TIP" ? "gas-tip" : "community",
+          };
+        });
+        
+        setRides(formattedRides);
+      } catch (error) {
+        console.error("Failed to fetch rides:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRides();
   }, []);
+
+  const sortedRides = [...rides].sort((a, b) => {
+    if (sortOrder === "newest") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
 
   return (
     <AppLayout>
@@ -169,15 +221,17 @@ export default function HomePage() {
         {/* GREETING */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar name={currentUser.name} src={currentUser.avatar} size="lg" verified={currentUser.verified} premium={currentUser.isPremium} />
+            <Avatar name={user?.name || "User"} src={user?.avatarUrl} size="lg" verified={user?.verified} premium={user?.isPremium} />
             <div>
               <p className="text-sm text-[var(--text-muted)]">Chào buổi sáng,</p>
-              <h2 className="text-xl font-bold text-[var(--text-heading)]">{currentUser.name.split(" ").pop()}! 👋</h2>
+              <h2 className="text-xl font-bold text-[var(--text-heading)]">
+                {user?.name ? user.name.trim().split(" ").pop() : "Bạn"}! 👋
+              </h2>
             </div>
           </div>
           <div className="text-right">
             <Badge variant="success" className="mb-1">
-              <IconLeaf size={12} className="mr-1" /> {currentUser.ecoPoints}
+              <IconLeaf size={12} className="mr-1" /> {user?.ecoPoints || 0}
             </Badge>
             <div className="text-xs text-[var(--text-muted)]">Eco Points</div>
           </div>
@@ -242,17 +296,26 @@ export default function HomePage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-[var(--text-heading)]">Chuyến đi gợi ý</h3>
-            <Link href="/rides" className="text-sm font-medium text-primary-500 hover:text-primary-600 flex items-center">
-              Xem tất cả <IconChevronRight size={16} />
-            </Link>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as any)}
+              className="text-sm bg-surface-100 dark:bg-surface-200 border-none rounded-lg px-2 py-1 text-[var(--text-heading)] focus:ring-1 focus:ring-primary-500 font-medium cursor-pointer"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+            </select>
           </div>
           
           <div className="space-y-4">
             {isLoading
               ? Array.from({ length: 3 }).map((_, i) => <RideCardSkeleton key={i} />)
-              : mockRides.slice(0, 4).map((ride, i) => (
+              : sortedRides.length > 0 ? sortedRides.slice(0, 10).map((ride, i) => (
                   <RideCard key={ride.id} ride={ride} index={i} />
-                ))}
+                )) : (
+                  <div className="text-center py-8 text-[var(--text-muted)] text-sm">
+                    Chưa có chuyến đi nào phù hợp
+                  </div>
+                )}
           </div>
         </div>
 

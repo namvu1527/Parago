@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/:path*",
+        destination: "http://127.0.0.1:3002/:path*",
+      },
+      {
+        source: "/socket.io/:path*",
+        destination: "http://127.0.0.1:3002/socket.io/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -19,7 +19,9 @@ type MenuItem = {
 import { motion } from "framer-motion";
 import { AppLayout, AppHeader } from "@/components/layout";
 import { Avatar, Badge, StarRating } from "@/components/ui";
-import { currentUser } from "@/lib/mock-data";
+import { useAuthStore } from "@/store/auth-store";
+import { apiClient } from "@/lib/api-client";
+import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/providers/theme-provider";
 import { cn } from "@/lib/utils";
 import {
@@ -42,6 +44,29 @@ import {
 
 export default function ProfilePage() {
   const { resolvedTheme, setTheme } = useTheme();
+  const { user, logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await apiClient.post("/auth/logout");
+    } catch (e) {
+      console.error("Logout failed on server", e);
+    } finally {
+      logout();
+      router.push("/login");
+    }
+  };
+
+  const currentUser = user || {
+    name: "Loading...",
+    university: "...",
+    faculty: "...",
+    avatar: undefined,
+    verified: false,
+    isPremium: false,
+    ecoPoints: 0,
+  };
 
   const menuSections: { title: string; items: MenuItem[] }[] = [
     {
@@ -90,7 +115,7 @@ export default function ProfilePage() {
           
           <div className="flex items-center gap-4 relative z-10">
             <div className="relative">
-              <Avatar name={currentUser.name} src={currentUser.avatar} size="xl" />
+              <Avatar name={currentUser.name} src={(currentUser as any).avatarUrl || (currentUser as any).avatar} size="xl" />
               {currentUser.verified && (
                 <div className="absolute bottom-0 right-0 bg-white rounded-full p-0.5 shadow-sm">
                   <IconShieldCheck size={20} className="text-primary-500" />
@@ -216,7 +241,7 @@ export default function ProfilePage() {
 
           {/* LOGOUT BUTTON */}
           <div className="bg-surface-0 rounded-2xl border border-surface-200 overflow-hidden">
-            <button className="w-full flex items-center p-4 hover:bg-red-50/50 transition-colors group">
+            <button onClick={handleLogout} className="w-full flex items-center p-4 hover:bg-red-50/50 transition-colors group">
               <div className="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center mr-3 shrink-0 group-hover:bg-red-100 transition-colors">
                 <IconLogout size={20} />
               </div>

@@ -40,6 +40,7 @@ export interface Ride {
   genderPreference?: "same" | "male" | "female" | "any";
   notes?: string;
   passengers: User[];
+  createdAt?: string;
 }
 
 export interface Message {
@@ -170,166 +171,13 @@ export const mockUsers: User[] = [
 export const currentUser: User = mockUsers[0];
 
 // ---- MOCK RIDES ----
-export const mockRides: Ride[] = [
-  {
-    id: "r1",
-    driver: mockUsers[1],
-    pickup: "KTX Bách Khoa, Hai Bà Trưng, Hà Nội",
-    pickupShort: "KTX Bách Khoa",
-    destination: "Đại học Bách Khoa Hà Nội, Đống Đa",
-    destinationShort: "ĐH Bách Khoa",
-    departureTime: "07:30",
-    date: "Hôm nay",
-    seats: 4,
-    seatsAvailable: 2,
-    price: 0,
-    mode: "community",
-    status: "published",
-    matchScore: 95,
-    distance: "3.2km",
-    duration: "12 phút",
-    vehicleType: "car",
-    vehicleName: "Toyota Vios 2022",
-    recurring: "daily",
-    genderPreference: "any",
-    notes: "Đi đúng giờ, có điều hòa 🚗",
-    passengers: [mockUsers[2]],
-  },
-  {
-    id: "r2",
-    driver: mockUsers[3],
-    pickup: "Cầu Giấy, Hà Nội",
-    pickupShort: "Cầu Giấy",
-    destination: "ĐH Quốc Gia Hà Nội, Xuân Thủy",
-    destinationShort: "ĐH Quốc Gia",
-    departureTime: "08:00",
-    date: "Hôm nay",
-    seats: 2,
-    seatsAvailable: 1,
-    price: 15000,
-    mode: "gas-tip",
-    status: "published",
-    matchScore: 87,
-    distance: "5.1km",
-    duration: "18 phút",
-    vehicleType: "motorcycle",
-    recurring: "weekly",
-    genderPreference: "any",
-    passengers: [],
-  },
-  {
-    id: "r3",
-    driver: mockUsers[0],
-    pickup: "Times City, Hai Bà Trưng",
-    pickupShort: "Times City",
-    destination: "ĐH Bách Khoa Hà Nội",
-    destinationShort: "ĐH Bách Khoa",
-    departureTime: "06:45",
-    date: "Ngày mai",
-    seats: 4,
-    seatsAvailable: 3,
-    price: 10000,
-    mode: "gas-tip",
-    status: "published",
-    matchScore: 92,
-    distance: "4.5km",
-    duration: "15 phút",
-    vehicleType: "car",
-    vehicleName: "Honda City 2023",
-    genderPreference: "any",
-    notes: "Ghế rộng, đi nhẹ nhàng ✨",
-    passengers: [],
-  },
-  {
-    id: "r4",
-    driver: mockUsers[4],
-    pickup: "Thanh Xuân, Hà Nội",
-    pickupShort: "Thanh Xuân",
-    destination: "ĐH Bách Khoa Hà Nội",
-    destinationShort: "ĐH Bách Khoa",
-    departureTime: "07:15",
-    date: "Hôm nay",
-    seats: 2,
-    seatsAvailable: 1,
-    price: 0,
-    mode: "community",
-    status: "published",
-    matchScore: 78,
-    distance: "6.8km",
-    duration: "22 phút",
-    vehicleType: "motorcycle",
-    genderPreference: "female",
-    notes: "Chỉ nhận nữ, đi an toàn 💕",
-    passengers: [],
-  },
-  {
-    id: "r5",
-    driver: mockUsers[1],
-    pickup: "Hà Đông, Hà Nội",
-    pickupShort: "Hà Đông",
-    destination: "ĐH Bách Khoa Hà Nội",
-    destinationShort: "ĐH Bách Khoa",
-    departureTime: "07:00",
-    date: "Hôm nay",
-    seats: 4,
-    seatsAvailable: 1,
-    price: 20000,
-    mode: "gas-tip",
-    status: "matched",
-    matchScore: 82,
-    distance: "12km",
-    duration: "35 phút",
-    vehicleType: "car",
-    vehicleName: "Mazda 3 2023",
-    recurring: "daily",
-    genderPreference: "any",
-    passengers: [mockUsers[2], mockUsers[4]],
-  },
-];
+// Removed mockRides
 
 // ---- MOCK CONVERSATIONS ----
-export const mockConversations: Conversation[] = [
-  {
-    id: "c1",
-    participant: mockUsers[1],
-    lastMessage: "Ok bạn, 7:30 mình đón nhé!",
-    lastMessageTime: "5 phút trước",
-    unreadCount: 2,
-    rideId: "r1",
-  },
-  {
-    id: "c2",
-    participant: mockUsers[2],
-    lastMessage: "Cảm ơn bạn, chuyến đi rất thoải mái 😊",
-    lastMessageTime: "1 giờ trước",
-    unreadCount: 0,
-  },
-  {
-    id: "c3",
-    participant: mockUsers[3],
-    lastMessage: "Bạn có thể đón ở ngã tư được không?",
-    lastMessageTime: "3 giờ trước",
-    unreadCount: 1,
-    rideId: "r2",
-  },
-  {
-    id: "c4",
-    participant: mockUsers[4],
-    lastMessage: "Mai mình đi sớm hơn 15p nha",
-    lastMessageTime: "Hôm qua",
-    unreadCount: 0,
-  },
-];
+// Removed mockConversations
 
 // ---- MOCK MESSAGES ----
-export const mockMessages: Message[] = [
-  { id: "m1", senderId: "u2", content: "Chào bạn! Mình đang tìm người đi chung từ KTX Bách Khoa đến trường, bạn có quan tâm không?", type: "text", timestamp: "07:20", read: true },
-  { id: "m2", senderId: "u1", content: "Chào bạn! Mình cũng đi tuyến đó hàng ngày. Mình hay đi lúc 7:30 sáng.", type: "text", timestamp: "07:22", read: true },
-  { id: "m3", senderId: "u2", content: "Tuyệt vời! 7:30 là vừa đẹp. Mình đi xe gì vậy bạn?", type: "text", timestamp: "07:23", read: true },
-  { id: "m4", senderId: "u1", content: "Mình đi Toyota Vios, có điều hòa, 4 chỗ nha 🚗", type: "text", timestamp: "07:25", read: true },
-  { id: "m5", senderId: "u2", content: "Ok bạn, 7:30 mình đón nhé!", type: "text", timestamp: "07:28", read: false },
-  { id: "m6", senderId: "system", content: "⚠️ Không chia sẻ số điện thoại cá nhân qua tin nhắn", type: "system", timestamp: "07:28", read: true },
-];
+// Removed mockMessages
 
 // ---- ADMIN STATS ----
 export const mockAdminStats: AdminStats = {

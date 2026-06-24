@@ -1,12 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { AppLayout, AppHeader } from "@/components/layout";
 import { Card, Avatar, Badge, Input, StarRating, Skeleton, Button } from "@/components/ui";
-import { cn, formatCurrency } from "@/lib/utils";
-import { mockRides, type Ride } from "@/lib/mock-data";
+import { apiClient } from "@/lib/api-client";
+import { format } from "date-fns";
+import { type Ride } from "@/lib/mock-data";
+import { RideCard } from "@/components/ui/RideCard";
+import { cn } from "@/lib/utils";
 import {
   IconSearch,
   IconFilter,
@@ -33,122 +36,6 @@ const filters = [
   { id: "gas-tip", label: "Gas & Tip" },
   { id: "recurring", label: "Lịch trình" },
 ];
-
-const statusColors = {
-  published: { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", label: "Đang mở" },
-  matched: { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400", label: "Đã ghép" },
-  confirmed: { bg: "bg-primary-50 dark:bg-primary-500/10", text: "text-primary-600 dark:text-primary-400", label: "Đã xác nhận" },
-  "in-progress": { bg: "bg-orange-50 dark:bg-orange-500/10", text: "text-orange-600 dark:text-orange-400", label: "Đang đi" },
-  completed: { bg: "bg-surface-100 dark:bg-surface-200", text: "text-text-secondary", label: "Hoàn thành" },
-  cancelled: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400", label: "Đã hủy" },
-};
-
-function RideCard({ ride, index }: { ride: Ride; index: number }) {
-  const status = statusColors[ride.status];
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-    >
-      <Link href={`/rides/${ride.id}`}>
-        <Card variant="elevated" hover className="overflow-hidden">
-          {/* Top bar */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2.5">
-              <Avatar name={ride.driver.name} size="md" verified={ride.driver.verified} premium={ride.driver.isPremium} />
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-[var(--text-heading)]">{ride.driver.name}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <StarRating rating={ride.driver.rating} size="sm" />
-                  <span className="text-xs text-[var(--text-muted)]">{ride.driver.rating}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {ride.matchScore && (
-                <Badge variant="primary" size="sm">
-                  {ride.matchScore}% phù hợp
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Route */}
-          <div className="flex items-start gap-3 mb-3">
-            <div className="flex flex-col items-center mt-1">
-              <div className="w-2.5 h-2.5 rounded-full bg-primary-500" />
-              <div className="w-0.5 h-8 bg-surface-200 dark:bg-surface-300 my-0.5" />
-              <div className="w-2.5 h-2.5 rounded-full bg-gold-500" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[var(--text-heading)] truncate">{ride.pickupShort}</p>
-              <p className="text-[11px] text-[var(--text-muted)] truncate mb-2">{ride.pickup}</p>
-              <p className="text-sm font-medium text-[var(--text-heading)] truncate">{ride.destinationShort}</p>
-              <p className="text-[11px] text-[var(--text-muted)] truncate">{ride.destination}</p>
-            </div>
-          </div>
-
-          {/* Info row */}
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-              <IconClock size={14} />
-              {ride.departureTime}
-            </div>
-            <span className="text-surface-300">•</span>
-            <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-              <IconCalendar size={14} />
-              {ride.date}
-            </div>
-            <span className="text-surface-300">•</span>
-            <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-              <IconUsers size={14} />
-              {ride.seatsAvailable}/{ride.seats} chỗ
-            </div>
-            <span className="text-surface-300">•</span>
-            <div className="flex items-center gap-1 text-xs text-[var(--text-secondary)]">
-              {ride.vehicleType === "car" ? <IconCar size={14} /> : <IconMotorbike size={14} />}
-              {ride.distance}
-            </div>
-          </div>
-
-          {/* Bottom bar */}
-          <div className="flex items-center justify-between pt-3 border-t border-[var(--border-light)]">
-            <div className="flex items-center gap-2">
-              {ride.mode === "community" ? (
-                <Badge variant="success" size="sm">
-                  <IconLeaf size={12} /> Miễn phí
-                </Badge>
-              ) : (
-                <Badge variant="gold" size="sm">
-                  <IconGasStation size={12} /> {formatCurrency(ride.price)}
-                </Badge>
-              )}
-              {ride.recurring && (
-                <Badge variant="outline" size="sm">
-                  {ride.recurring === "daily" ? "Hàng ngày" : "Hàng tuần"}
-                </Badge>
-              )}
-              <span className={cn("text-xs px-2 py-0.5 rounded-full", status.bg, status.text)}>
-                {status.label}
-              </span>
-            </div>
-            <Button size="sm" variant="primary">
-              Ghép xe <IconChevronRight size={14} />
-            </Button>
-          </div>
-
-          {/* Notes */}
-          {ride.notes && (
-            <p className="text-xs text-[var(--text-muted)] mt-2 italic">"{ride.notes}"</p>
-          )}
-        </Card>
-      </Link>
-    </motion.div>
-  );
-}
 
 function RideCardSkeleton() {
   return (
@@ -183,16 +70,57 @@ function RideCardSkeleton() {
 
 export default function RidesPage() {
   const [activeFilter, setActiveFilter] = useState("all");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [rides, setRides] = useState<any[]>([]);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
 
-  const filteredRides = mockRides.filter((ride) => {
-    if (activeFilter === "all") return true;
-    if (activeFilter === "car") return ride.vehicleType === "car";
-    if (activeFilter === "motorcycle") return ride.vehicleType === "motorcycle";
-    if (activeFilter === "community") return ride.mode === "community";
-    if (activeFilter === "gas-tip") return ride.mode === "gas-tip";
-    if (activeFilter === "recurring") return !!ride.recurring;
-    return true;
+  useEffect(() => {
+    const fetchRides = async () => {
+      try {
+        setIsLoading(true);
+        let query = "?status=PENDING";
+        if (activeFilter === "community") query += "&mode=COMMUNITY";
+        if (activeFilter === "gas-tip") query += "&mode=GAS_TIP";
+        
+        const res = await apiClient.get(`/rides${query}`);
+        
+        let formattedRides = res.data.map((r: any) => {
+          const dateObj = new Date(r.departureAt);
+          return {
+            ...r,
+            pickupShort: r.pickupLocation.split(",")[0],
+            pickup: r.pickupLocation,
+            destinationShort: r.destinationLocation.split(",")[0],
+            destination: r.destinationLocation,
+            departureTime: format(dateObj, "HH:mm"),
+            date: format(dateObj, "dd/MM"),
+            createdAt: r.createdAt,
+            seats: r.totalSeats,
+            distance: r.distance,
+            mode: r.mode === "GAS_TIP" ? "gas-tip" : "community",
+          };
+        });
+
+        // Apply client-side filters for vehicleType if needed
+        if (activeFilter === "car") formattedRides = formattedRides.filter((r: any) => r.vehicleType === "car");
+        if (activeFilter === "motorcycle") formattedRides = formattedRides.filter((r: any) => r.vehicleType === "motorcycle");
+        
+        setRides(formattedRides);
+      } catch (error) {
+        console.error("Failed to fetch rides:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchRides();
+  }, [activeFilter]);
+
+  const sortedRides = [...rides].sort((a, b) => {
+    if (sortOrder === "newest") {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 
   return (
@@ -234,20 +162,34 @@ export default function RidesPage() {
         {/* Results count */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-[var(--text-muted)]">
-            {filteredRides.length} chuyến đi có sẵn
+            {rides.length} chuyến đi có sẵn
           </p>
-          <button className="text-xs text-primary-500 font-medium flex items-center gap-1">
-            <IconFilter size={14} /> Bộ lọc
-          </button>
+          <div className="flex items-center gap-3">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as any)}
+              className="text-xs bg-surface-100 dark:bg-surface-200 border-none rounded-lg px-2 py-1.5 text-[var(--text-heading)] focus:ring-1 focus:ring-primary-500 font-medium cursor-pointer"
+            >
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+            </select>
+            <button className="text-xs text-primary-500 font-medium flex items-center gap-1">
+              <IconFilter size={14} /> Bộ lọc
+            </button>
+          </div>
         </div>
 
         {/* Rides list */}
         <div className="space-y-3">
           {isLoading
             ? Array.from({ length: 3 }).map((_, i) => <RideCardSkeleton key={i} />)
-            : filteredRides.map((ride, i) => (
+            : sortedRides.length > 0 ? sortedRides.map((ride, i) => (
                 <RideCard key={ride.id} ride={ride} index={i} />
-              ))}
+              )) : (
+                <div className="text-center py-8 text-[var(--text-muted)] text-sm">
+                  Không tìm thấy chuyến đi nào phù hợp
+                </div>
+              )}
         </div>
       </div>
     </AppLayout>

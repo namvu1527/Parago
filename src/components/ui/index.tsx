@@ -1,5 +1,8 @@
 "use client";
 
+export * from './GlobalApiErrorBoundary';
+
+
 import React from "react";
 import { cn } from "@/lib/utils";
 
@@ -213,19 +216,21 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   icon?: React.ReactNode;
+  leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
-export function Input({ label, error, icon, rightIcon, className, ...props }: InputProps) {
+export function Input({ label, error, icon, leftIcon, rightIcon, className, ...props }: InputProps) {
+  const renderIcon = leftIcon || icon;
   return (
     <div className="space-y-1.5">
       {label && (
         <label className="text-sm font-medium text-[var(--text-heading)]">{label}</label>
       )}
       <div className="relative">
-        {icon && (
+        {renderIcon && (
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
-            {icon}
+            {renderIcon}
           </div>
         )}
         <input
@@ -234,7 +239,7 @@ export function Input({ label, error, icon, rightIcon, className, ...props }: In
             "text-sm text-[var(--text-heading)] placeholder:text-[var(--text-muted)]",
             "focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500",
             "transition-all duration-200",
-            icon ? "pl-10" : "pl-4",
+            renderIcon ? "pl-10" : "pl-4",
             rightIcon ? "pr-10" : "pr-4",
             error && "border-red-500 focus:ring-red-500/30",
             className
@@ -401,3 +406,5 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
     </div>
   );
 }
+
+export * from "./LocationPicker";

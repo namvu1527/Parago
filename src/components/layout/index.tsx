@@ -19,19 +19,24 @@ import {
 import { ParagoLogo } from "@/components/ui/logo";
 import { Badge as UIBadge, FAB } from "@/components/ui";
 import { useTheme } from "@/components/providers/theme-provider";
+import { NotificationBell } from "./NotificationBell";
+import { useMessageStore } from "@/store/message-store";
+import { useEffect } from "react";
+import { useAuthStore } from "@/store/auth-store";
 
 // ==========================================
 // BOTTOM NAVIGATION (Mobile)
 // ==========================================
-const navItems = [
-  { href: "/home", icon: IconHome, label: "Trang chủ" },
-  { href: "/rides", icon: IconCar, label: "Chuyến đi" },
-  { href: "/messages", icon: IconMessage, label: "Tin nhắn", badge: 3 },
-  { href: "/profile", icon: IconUser, label: "Cá nhân" },
-];
-
 export function BottomNav() {
   const pathname = usePathname();
+  const unreadCount = useMessageStore((state) => state.unreadCount);
+
+  const navItems = [
+    { href: "/home", icon: IconHome, label: "Trang chủ" },
+    { href: "/rides/my", icon: IconCar, label: "Chuyến đi" },
+    { href: "/messages", icon: IconMessage, label: "Tin nhắn", badge: unreadCount },
+    { href: "/profile", icon: IconUser, label: "Cá nhân" },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 glass-strong safe-bottom md:hidden">
@@ -141,10 +146,7 @@ export function AppHeader({
             </button>
           )}
           {showNotification && (
-            <button className="w-9 h-9 rounded-xl flex items-center justify-center hover:bg-surface-100 dark:hover:bg-surface-200 transition-colors text-[var(--text-muted)] relative">
-              <IconBell size={20} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary-500 rounded-full" />
-            </button>
+            <NotificationBell />
           )}
           <button
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
@@ -164,11 +166,12 @@ export function AppHeader({
 // ==========================================
 export function Sidebar() {
   const pathname = usePathname();
+  const unreadCount = useMessageStore((state) => state.unreadCount);
 
   const sidebarItems = [
     { href: "/home", icon: IconHome, label: "Trang chủ" },
-    { href: "/rides", icon: IconCar, label: "Chuyến đi" },
-    { href: "/messages", icon: IconMessage, label: "Tin nhắn", badge: 3 },
+    { href: "/rides/my", icon: IconCar, label: "Chuyến đi" },
+    { href: "/messages", icon: IconMessage, label: "Tin nhắn", badge: unreadCount },
     { href: "/profile", icon: IconUser, label: "Cá nhân" },
   ];
 
@@ -196,7 +199,7 @@ export function Sidebar() {
             >
               <item.icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
               <span>{item.label}</span>
-              {item.badge && (
+              {typeof item.badge === 'number' && item.badge > 0 && (
                 <span className="ml-auto min-w-[20px] h-5 rounded-full bg-primary-500 text-white text-[10px] font-bold flex items-center justify-center px-1.5">
                   {item.badge}
                 </span>
@@ -223,23 +226,36 @@ export function Sidebar() {
 // ==========================================
 // MAIN LAYOUT
 // ==========================================
-export function AppLayout({ children }: { children: React.ReactNode }) {
+import { ChatbotWidget } from "@/components/ui/chatbot-widget";
+
+export function AppLayout({ children, hideBottomNav = false }: { children: React.ReactNode, hideBottomNav?: boolean }) {
+  const { fetchUnreadCount } = useMessageStore();
+  const { isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUnreadCount();
+    }
+  }, [isAuthenticated, fetchUnreadCount]);
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)]">
       <Sidebar />
-      <main className="md:ml-64 pb-20 md:pb-0">
+      <main className={cn("md:ml-64", hideBottomNav ? "pb-0" : "pb-20 md:pb-0")}>
         {children}
       </main>
-      <BottomNav />
-      {/* Mobile FAB */}
-      <div className="fixed right-4 bottom-20 z-30 md:hidden">
-        <Link href="/rides/create">
-          <FAB
-            icon={<IconPlus size={24} />}
-            variant="primary"
-          />
-        </Link>
-      </div>
+      {!hideBottomNav && (
+        <>
+          <BottomNav />
+          {/* Mobile FAB */}
+          <div className="fixed right-4 bottom-20 z-30 md:hidden">
+            <Link href="/rides/create">
+              <FAB icon={<IconPlus size={24} />} size="lg" />
+            </Link>
+          </div>
+          <ChatbotWidget />
+        </>
+      )}
     </div>
   );
 }
