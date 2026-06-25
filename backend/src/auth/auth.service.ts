@@ -12,7 +12,7 @@ export class AuthService {
   ) {}
 
   private validateEmailDomain(email: string) {
-    const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || 'hust.edu.vn,vnu.edu.vn,neu.edu.vn').split(',');
+    const allowedDomains = (process.env.ALLOWED_EMAIL_DOMAINS || 'hust.edu.vn,vnu.edu.vn,neu.edu.vn,ftu.edu.vn,fpt.edu.vn,huce.edu.vn,hvnh.edu.vn,utc.edu.vn,tmu.edu.vn,tlu.edu.vn').split(',');
     const domain = email.split('@')[1];
     if (!allowedDomains.includes(domain)) {
       throw new BadRequestException('Email domain not allowed. Must be a supported university email.');

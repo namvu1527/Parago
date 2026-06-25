@@ -5,8 +5,8 @@ export declare class AdminService {
     constructor(prisma: PrismaService);
     getUsers(page?: number, limit?: number, search?: string): Promise<{
         data: {
-            name: string;
             id: string;
+            name: string;
             email: string;
             university: string;
             avatarUrl: string | null;
@@ -20,31 +20,31 @@ export declare class AdminService {
         limit: number;
     }>;
     verifyUser(id: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         verified: boolean;
     }>;
     banUser(id: string, reason: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         isBanned: boolean;
         banReason: string | null;
     }>;
     unbanUser(id: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         isBanned: boolean;
     }>;
     changeUserRole(id: string, role: SystemRole | null): Promise<{
-        name: string;
         id: string;
+        name: string;
         systemRole: import(".prisma/client").$Enums.SystemRole | null;
     }>;
     getRides(page?: number, limit?: number, status?: string): Promise<{
         data: ({
             driver: {
-                name: string;
                 id: string;
+                name: string;
                 email: string;
             };
         } & {
@@ -107,8 +107,8 @@ export declare class AdminService {
             };
         };
         triggeredByUser: {
-            name: string;
             id: string;
+            name: string;
             phone: string | null;
         };
     } & {

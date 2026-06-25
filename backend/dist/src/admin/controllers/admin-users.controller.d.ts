@@ -5,8 +5,8 @@ export declare class AdminUsersController {
     constructor(adminService: AdminService);
     getUsers(page: string, limit: string, search: string): Promise<{
         data: {
-            name: string;
             id: string;
+            name: string;
             email: string;
             university: string;
             avatarUrl: string | null;
@@ -20,24 +20,24 @@ export declare class AdminUsersController {
         limit: number;
     }>;
     verifyUser(id: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         verified: boolean;
     }>;
     banUser(id: string, reason: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         isBanned: boolean;
         banReason: string | null;
     }>;
     unbanUser(id: string): Promise<{
-        name: string;
         id: string;
+        name: string;
         isBanned: boolean;
     }>;
     changeRole(id: string, role: SystemRole | null): Promise<{
-        name: string;
         id: string;
+        name: string;
         systemRole: import(".prisma/client").$Enums.SystemRole | null;
     }>;
 }

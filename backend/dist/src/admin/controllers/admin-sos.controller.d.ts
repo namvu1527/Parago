@@ -12,8 +12,8 @@ export declare class AdminSOSController {
             };
         };
         triggeredByUser: {
-            name: string;
             id: string;
+            name: string;
             phone: string | null;
         };
     } & {

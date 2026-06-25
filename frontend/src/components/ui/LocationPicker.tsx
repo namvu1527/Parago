@@ -29,18 +29,15 @@ export const PRESET_LOCATIONS = [
   { id: 'ftu', name: 'Đại học Ngoại thương', type: 'university', icon: '🎓', lat: 21.0225029, lng: 105.8051480, address: 'Đại học Ngoại thương, 91 Chùa Láng, Đống Đa, Hà Nội' },
   { id: 'xaydung', name: 'Đại học Xây dựng', type: 'university', icon: '🎓', lat: 21.0005518, lng: 105.8452410, address: 'Đại học Xây dựng Hà Nội, 55 Giải Phóng, Hai Bà Trưng, Hà Nội' },
   { id: 'thuyloi', name: 'Đại học Thủy lợi', type: 'university', icon: '🎓', lat: 21.0068, lng: 105.8242, address: 'Đại học Thủy lợi, 175 Tây Sơn, Đống Đa, Hà Nội' },
+  { id: 'hvnh', name: 'Học viện Ngân hàng', type: 'university', icon: '🎓', lat: 21.008985, lng: 105.828608, address: 'Học viện Ngân hàng, 12 Chùa Bộc, Đống Đa, Hà Nội' },
+  { id: 'utc', name: 'Đại học GTVT', type: 'university', icon: '🎓', lat: 21.028682, lng: 105.803856, address: 'Đại học Giao thông Vận tải, 3 Cầu Giấy, Đống Đa, Hà Nội' },
+  { id: 'tmu', name: 'Đại học Thương Mại', type: 'university', icon: '🎓', lat: 21.037307, lng: 105.773516, address: 'Đại học Thương mại, 79 Hồ Tùng Mậu, Cầu Giấy, Hà Nội' },
   // Ký túc xá
   { id: 'ktx_hust', name: 'KTX Bách Khoa', type: 'dorm', icon: '🏠', lat: 21.0040, lng: 105.8465, address: 'Ký túc xá Đại học Bách khoa Hà Nội, Tạ Quang Bửu, Hai Bà Trưng, Hà Nội' },
   { id: 'ktx_metri', name: 'KTX Mễ Trì', type: 'dorm', icon: '🏠', lat: 21.0000, lng: 105.7950, address: 'Ký túc xá Mễ Trì, Lương Thế Vinh, Thanh Xuân, Hà Nội' },
-  // Giao thông
-  { id: 'noibai', name: 'Sân bay Nội Bài', type: 'airport', icon: '✈️', lat: 21.2169534, lng: 105.7937453, address: 'Sân bay Quốc tế Nội Bài, Phú Minh, Sóc Sơn, Hà Nội' },
-  { id: 'mydinh_bus', name: 'Bến xe Mỹ Đình', type: 'bus', icon: '🚌', lat: 21.0284045, lng: 105.7783143, address: 'Bến xe Mỹ Đình, 20 Phạm Hùng, Nam Từ Liêm, Hà Nội' },
-  { id: 'giapbat', name: 'Bến xe Giáp Bát', type: 'bus', icon: '🚌', lat: 20.9802349, lng: 105.8420007, address: 'Bến xe Giáp Bát, Giải Phóng, Hoàng Mai, Hà Nội' },
-  // Nổi tiếng
-  { id: 'mydinh_stadium', name: 'Sân vận động Mỹ Đình', type: 'landmark', icon: '🏟️', lat: 21.0205027, lng: 105.7639271, address: 'Sân vận động Quốc gia Mỹ Đình, Lê Đức Thọ, Nam Từ Liêm, Hà Nội' },
 ];
 
-const QUICK_PICK_IDS = ['hust', 'neu', 'vnu', 'mydinh_bus', 'noibai'];
+const QUICK_PICK_IDS = ['hust', 'neu', 'vnu', 'xaydung', 'ftu'];
 
 interface LocationPickerProps {
   label?: string;
@@ -126,10 +123,6 @@ export function LocationPicker({
         filteredPresets = PRESET_LOCATIONS.filter(p => p.type === 'university');
       } else if (lowerText.includes('ktx') || lowerText.includes('ký túc')) {
         filteredPresets = PRESET_LOCATIONS.filter(p => p.type === 'dorm');
-      } else if (lowerText.includes('bến xe') || lowerText.includes('ben xe')) {
-        filteredPresets = PRESET_LOCATIONS.filter(p => p.type === 'bus');
-      } else if (lowerText.includes('sân bay') || lowerText.includes('nội bài')) {
-        filteredPresets = PRESET_LOCATIONS.filter(p => p.type === 'airport');
       } else {
         filteredPresets = PRESET_LOCATIONS.filter(p => p.name.toLowerCase().includes(lowerText));
       }

@@ -5,8 +5,8 @@ export declare class AdminRidesController {
     getRides(page: string, limit: string, status: string): Promise<{
         data: ({
             driver: {
-                name: string;
                 id: string;
+                name: string;
                 email: string;
             };
         } & {

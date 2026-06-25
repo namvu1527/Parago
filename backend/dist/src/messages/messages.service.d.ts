@@ -13,27 +13,27 @@ export declare class MessagesService {
         createdAt: Date;
         unreadCount: number;
         otherUser: {
-            name: string;
             id: string;
+            name: string;
             avatarUrl: string | null;
         } | undefined;
     }[]>;
     getMessages(conversationId: string, userId: string, skip?: number, take?: number): Promise<{
         conversation: {
             otherUser: {
-                name: string;
                 id: string;
+                name: string;
                 avatarUrl: string | null;
             };
             participants: ({
                 user: {
-                    name: string;
                     id: string;
+                    name: string;
                     avatarUrl: string | null;
                 };
             } & {
-                conversationId: string;
                 userId: string;
+                conversationId: string;
                 joinedAt: Date;
             })[];
             id: string;
@@ -44,34 +44,34 @@ export declare class MessagesService {
         };
         messages: ({
             sender: {
-                name: string;
                 id: string;
+                name: string;
                 avatarUrl: string | null;
             } | null;
         } & {
             id: string;
             createdAt: Date;
-            text: string | null;
-            imageUrl: string | null;
             type: string;
             isRead: boolean;
+            text: string | null;
+            imageUrl: string | null;
             conversationId: string;
             senderId: string | null;
         })[];
     }>;
     saveMessage(conversationId: string, senderId: string, text: string, type?: string): Promise<{
         sender: {
-            name: string;
             id: string;
+            name: string;
             avatarUrl: string | null;
         } | null;
     } & {
         id: string;
         createdAt: Date;
-        text: string | null;
-        imageUrl: string | null;
         type: string;
         isRead: boolean;
+        text: string | null;
+        imageUrl: string | null;
         conversationId: string;
         senderId: string | null;
     }>;

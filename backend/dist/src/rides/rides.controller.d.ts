@@ -33,8 +33,8 @@ export declare class RidesController {
             id: string;
         }[];
         driver: {
-            name: string;
             id: string;
+            name: string;
             avatarUrl: string | null;
             isPremium: boolean;
             rating: number;
@@ -130,8 +130,8 @@ export declare class RidesController {
         seatsAvailable: number;
         passengers: ({
             passenger: {
-                name: string;
                 id: string;
+                name: string;
                 avatarUrl: string | null;
                 rating: number;
             };
@@ -143,8 +143,8 @@ export declare class RidesController {
             passengerId: string;
         })[];
         driver: {
-            name: string;
             id: string;
+            name: string;
             university: string;
             faculty: string;
             avatarUrl: string | null;

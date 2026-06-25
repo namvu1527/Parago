@@ -23,8 +23,8 @@ export declare class TrackingService implements OnModuleInit, OnModuleDestroy {
             vehicleName: string | null;
         };
         triggeredByUser: {
-            name: string;
             id: string;
+            name: string;
             phone: string | null;
         };
     } & {
@@ -43,14 +43,14 @@ export declare class TrackingService implements OnModuleInit, OnModuleDestroy {
             vehicleType: string;
             vehicleName: string | null;
             driver: {
-                name: string;
                 id: string;
+                name: string;
                 phone: string | null;
             };
         };
         triggeredByUser: {
-            name: string;
             id: string;
+            name: string;
             phone: string | null;
         };
     } & {

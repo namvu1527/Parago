@@ -16,27 +16,27 @@ export declare class MessagesController {
         createdAt: Date;
         unreadCount: number;
         otherUser: {
-            name: string;
             id: string;
+            name: string;
             avatarUrl: string | null;
         } | undefined;
     }[]>;
     getMessages(req: any, id: string, skip?: string, take?: string): Promise<{
         conversation: {
             otherUser: {
-                name: string;
                 id: string;
+                name: string;
                 avatarUrl: string | null;
             };
             participants: ({
                 user: {
-                    name: string;
                     id: string;
+                    name: string;
                     avatarUrl: string | null;
                 };
             } & {
-                conversationId: string;
                 userId: string;
+                conversationId: string;
                 joinedAt: Date;
             })[];
             id: string;
@@ -47,17 +47,17 @@ export declare class MessagesController {
         };
         messages: ({
             sender: {
-                name: string;
                 id: string;
+                name: string;
                 avatarUrl: string | null;
             } | null;
         } & {
             id: string;
             createdAt: Date;
-            text: string | null;
-            imageUrl: string | null;
             type: string;
             isRead: boolean;
+            text: string | null;
+            imageUrl: string | null;
             conversationId: string;
             senderId: string | null;
         })[];

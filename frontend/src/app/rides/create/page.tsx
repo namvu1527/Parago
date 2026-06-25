@@ -99,12 +99,23 @@ export default function CreateRidePage() {
           router.push("/home");
         }
       } catch (error: any) {
-        console.error("Lỗi khi đăng chuyến đi:", error);
-        alert(error.response?.data?.message || "Có lỗi xảy ra khi đăng chuyến đi. Vui lòng thử lại.");
+        console.error("Lỗi đăng chuyến đi:", error.response?.data || error);
+        alert(`Lỗi đăng chuyến đi: ${JSON.stringify(error.response?.data?.message || error.message)}`);
       } finally {
         setIsEstimating(false);
       }
       return;
+    }
+
+    if (step === 2) {
+      if (!formData.date || !formData.time) {
+        alert("Vui lòng chọn ngày và giờ khởi hành!");
+        return;
+      }
+      if (formData.mode === "gas-tip" && !formData.price) {
+        alert("Vui lòng nhập mức đóng góp (VNĐ)!");
+        return;
+      }
     }
 
     if (step < 3) {

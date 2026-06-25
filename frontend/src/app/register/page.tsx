@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button, Card, Input } from "@/components/ui";
 import { ParagoLogo } from "@/components/ui/logo";
-import { IconMail, IconLock, IconUser, IconSchool, IconBook, IconAlertCircle } from "@tabler/icons-react";
+import { IconMail, IconLock, IconUser, IconSchool, IconBook, IconAlertCircle, IconCheck } from "@tabler/icons-react";
 import { apiClient } from "@/lib/api-client";
 
 export default function RegisterPage() {
@@ -113,16 +113,18 @@ export default function RegisterPage() {
             <Input
               label="Email trường"
               name="email"
-              placeholder="sv@hust.edu.vn"
+              placeholder="sv@ftu.edu.vn"
               type="email"
               value={formData.email}
               onChange={handleChange}
+              className="mt-1 bg-gray-900 border-gray-800 text-white"
               icon={<IconMail size={18} />}
               required
             />
-            <p className="text-xs text-[var(--text-muted)] -mt-2">
-              Chỉ chấp nhận email đuôi .edu.vn (vd: hust.edu.vn, vnu.edu.vn)
-            </p>
+            <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+              <IconCheck size={14} className="text-green-500" />
+              Chỉ chấp nhận email đuôi .edu.vn (vd: ftu.edu.vn, huce.edu.vn, hust.edu.vn...)
+            </div>
             
             <Input
               label="Mật khẩu"
