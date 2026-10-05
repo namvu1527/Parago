@@ -50,6 +50,7 @@ import { AuthProvider } from "@/components/providers/auth-provider";
 import { AuthGuard } from "@/components/providers/auth-guard";
 import { NotificationProvider } from "@/components/providers/notification-provider";
 import { GlobalApiErrorBoundary } from "@/components/ui";
+import { Toaster } from "sonner";
 
 export default function RootLayout({
   children,
@@ -69,6 +70,7 @@ export default function RootLayout({
               <ThemeProvider>
                 <GlobalApiErrorBoundary>
                   {children}
+                  <Toaster position="top-center" />
                 </GlobalApiErrorBoundary>
               </ThemeProvider>
             </NotificationProvider>

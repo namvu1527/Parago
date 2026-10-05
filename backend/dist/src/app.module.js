@@ -20,6 +20,8 @@ const admin_module_1 = require("./admin/admin.module");
 const rides_module_1 = require("./rides/rides.module");
 const messages_module_1 = require("./messages/messages.module");
 const notifications_module_1 = require("./notifications/notifications.module");
+const schedules_module_1 = require("./schedules/schedules.module");
+const reviews_module_1 = require("./reviews/reviews.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -36,6 +38,8 @@ exports.AppModule = AppModule = __decorate([
             rides_module_1.RidesModule,
             messages_module_1.MessagesModule,
             notifications_module_1.NotificationsModule,
+            schedules_module_1.SchedulesModule,
+            reviews_module_1.ReviewsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

@@ -22,6 +22,8 @@ import {
   IconTrash,
   IconX,
   IconAlertTriangle,
+  IconUsers, 
+  IconStar
 } from "@tabler/icons-react";
 
 export default function RideDetailsPage() {
@@ -145,6 +147,29 @@ export default function RideDetailsPage() {
     }
   };
 
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [previousPassengers, setPreviousPassengers] = useState<any[]>([]);
+
+  const fetchPreviousPassengers = async () => {
+    try {
+      const res = await apiClient.get('/users/me/previous-passengers');
+      setPreviousPassengers(res.data);
+      setShowInviteModal(true);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleInvite = async (passengerId: string) => {
+    try {
+      await apiClient.post(`/rides/${id}/invite`, { passengerId });
+      alert('Đã gửi lời mời!');
+      setShowInviteModal(false);
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Lỗi gửi lời mời');
+    }
+  };
+
   const handleCancelRequest = async () => {
     if (!confirm("Bạn muốn huỷ yêu cầu ghép xe này?")) return;
     setIsProcessing(true);
@@ -183,6 +208,42 @@ export default function RideDetailsPage() {
           <Skeleton className="w-full h-48 rounded-2xl" />
           <Skeleton className="w-full h-64 rounded-2xl" />
         </div>
+      
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-surface-0 w-full max-w-md rounded-2xl shadow-xl overflow-hidden">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-lg font-bold text-[var(--text-heading)]">Mời khách quen</h2>
+              <button onClick={() => setShowInviteModal(false)} className="p-2 text-surface-500 hover:bg-surface-100 rounded-full transition-colors"><IconX size={20} /></button>
+            </div>
+            <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+              {previousPassengers.length === 0 ? (
+                <div className="text-center py-8 text-surface-500">
+                  <IconUsers size={48} className="mx-auto mb-3 opacity-20" />
+                  <p>Bạn chưa có khách quen nào.</p>
+                </div>
+              ) : (
+                previousPassengers.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between p-3 border border-border rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <Avatar name={p.name} size="md" />
+                      <div>
+                        <div className="font-semibold text-sm">{p.name}</div>
+                        <div className="text-xs text-surface-500 flex items-center gap-1">
+                          <IconStar size={12} className="text-yellow-500 fill-yellow-500" />
+                          {Number(p.rating || 5.0).toFixed(1)}
+                        </div>
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => handleInvite(p.id)}>Mời</Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       </AppLayout>
     );
   }
@@ -299,7 +360,7 @@ export default function RideDetailsPage() {
         {/* PASSENGER MANAGEMENT (For Driver) */}
         {canManage && ride.passengers?.length > 0 && (
           <div className="bg-surface-50 rounded-2xl p-4 space-y-4 border border-surface-200">
-            <h3 className="text-lg font-bold text-[var(--text-heading)]">Hành khách ghép xe</h3>
+            <div className="flex items-center justify-between"><h3 className="text-lg font-bold text-[var(--text-heading)]">Hành khách ghép xe</h3>{canManage && <Button size="sm" variant="outline" onClick={() => fetchPreviousPassengers()}>Mời bạn cũ</Button>}</div>
             <div className="space-y-3">
               {ride.passengers.map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-default)]">
@@ -447,3 +508,6 @@ export default function RideDetailsPage() {
     </AppLayout>
   );
 }
+
+
+

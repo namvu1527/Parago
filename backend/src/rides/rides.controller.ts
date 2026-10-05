@@ -43,6 +43,18 @@ export class RidesController {
     }
   }
 
+  @Patch(':id/complete')
+  async complete(@Param('id') id: string, @Request() req: any) {
+    try {
+      return await this.ridesService.completeRide(id, req.user.id);
+    } catch (e: any) {
+      if (e.message === 'Forbidden') throw new ForbiddenException('Bạn không có quyền hoàn thành chuyến đi này');
+      if (e.message === 'Ride not found') throw new NotFoundException('Không tìm thấy chuyến đi');
+      if (e.message === 'Invalid status') throw new ConflictException('Trạng thái chuyến đi không hợp lệ');
+      throw e;
+    }
+  }
+
   @Delete(':id')
   async remove(@Param('id') id: string, @Request() req: any) {
     try {
@@ -96,4 +108,28 @@ export class RidesController {
       throw e;
     }
   }
+
+  @Post(':id/invite')
+  async invitePreviousPassenger(@Param('id') rideId: string, @Body('passengerId') passengerId: string, @Request() req: any) {
+    try {
+      return await this.ridesService.invitePreviousPassenger(rideId, req.user.id, passengerId);
+    } catch (e: any) {
+      if (e.message === 'Ride not found') throw new NotFoundException('Không tìm thấy chuyến đi');
+      if (e.message === 'Forbidden') throw new ForbiddenException('Bạn không phải tài xế chuyến này');
+      throw new Error(e.message);
+    }
+  }
+
+  @Post('bulk-from-schedules')
+  async bulkCreateFromSchedules(@Body() createBulkDto: any, @Request() req: any) {
+    return this.ridesService.bulkCreateFromSchedules(req.user.id, createBulkDto);
+  }
+
+  @Get('suggested-by-schedules')
+  async getSuggestedRidesBySchedules(@Request() req: any) {
+    return this.ridesService.getSuggestedRidesBySchedules(req.user.id);
+  }
 }
+
+
+

@@ -23,6 +23,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { apiClient } from "@/lib/api-client";
 import { useRouter } from "next/navigation";
 import { useTheme } from "@/components/providers/theme-provider";
+import { ReviewList } from "@/components/profile/ReviewList";
 import { cn } from "@/lib/utils";
 import {
   IconChevronRight,
@@ -59,6 +60,7 @@ export default function ProfilePage() {
   };
 
   const currentUser = user || {
+    id: "",
     name: "Loading...",
     university: "...",
     faculty: "...",
@@ -69,6 +71,12 @@ export default function ProfilePage() {
   };
 
   const menuSections: { title: string; items: MenuItem[] }[] = [
+    {
+      title: "Thời khoá biểu",
+      items: [
+        { icon: IconHistory, label: "Quản lý thời khoá biểu", href: "/profile/schedule", color: "text-purple-500", bg: "bg-purple-50" },
+      ]
+    },
     {
       title: "Chuyến đi",
       items: [
@@ -141,7 +149,9 @@ export default function ProfilePage() {
           <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-surface-200">
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
-                <span className="font-bold text-lg text-[var(--text-heading)]">4.9</span>
+                <span className="font-bold text-lg text-[var(--text-heading)]">
+                  {Number((currentUser as any).rating || 5.0).toFixed(1)}
+                </span>
                 <IconStarFilled size={14} className="text-gold-500" />
               </div>
               <span className="text-xs text-[var(--text-muted)]">Đánh giá</span>
@@ -174,6 +184,14 @@ export default function ProfilePage() {
               <div className="h-full bg-green-500" style={{ width: '40%' }} />
             </div>
           </div>
+        </div>
+
+        {/* REVIEWS SECTION */}
+        <div className="bg-surface-0 rounded-3xl p-5 border border-surface-200 shadow-sm">
+          <h3 className="text-sm font-semibold text-[var(--text-heading)] mb-4 flex items-center gap-2">
+            Đánh giá từ cộng đồng
+          </h3>
+          <ReviewList userId={currentUser.id} />
         </div>
 
         {/* MENU SECTIONS */}

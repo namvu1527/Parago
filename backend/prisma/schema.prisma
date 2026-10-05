@@ -12,41 +12,46 @@ datasource db {
 }
 
 model User {
-  id               String       @id @default(uuid())
+  id               String      @id @default(uuid())
   name             String
-  email            String       @unique
+  email            String      @unique
   phone            String?
   passwordHash     String
   university       String
   faculty          String
   avatarUrl        String?
-  isDriver         Boolean      @default(false)
-  isPremium        Boolean      @default(false)
-  ecoPoints        Int          @default(0)
-  rating           Float        @default(5.0)
-  totalRides       Int          @default(0)
-  trustScore       Int          @default(100)
-  verified         Boolean      @default(false)
+  isDriver         Boolean     @default(false)
+  isPremium        Boolean     @default(false)
+  ecoPoints        Int         @default(0)
+  rating           Float       @default(5.0)
+  totalRides       Int         @default(0)
+  trustScore       Int         @default(100)
+  verified         Boolean     @default(false)
   refreshTokenHash String?
   systemRole       SystemRole?
-  isBanned         Boolean      @default(false)
+  isBanned         Boolean     @default(false)
   banReason        String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   // Relations
-  driverRides      Ride[]       @relation("DriverRides")
-  passengerRides   RidePassenger[]
-  messages         Message[]
-  transactions     Transaction[]
-  conversations    ConversationParticipant[]
-  sosAlerts        SOSAlert[]
-  resolvedSOSAlerts SOSAlert[]  @relation("ResolvedSOSAlerts")
-  notifications    Notification[]
-  chatbotMessages  ChatbotMessage[]
+  driverRides       Ride[]                    @relation("DriverRides")
+  passengerRides    RidePassenger[]
+  messages          Message[]
+  transactions      Transaction[]
+  conversations     ConversationParticipant[]
+  sosAlerts         SOSAlert[]
+  resolvedSOSAlerts SOSAlert[]                @relation("ResolvedSOSAlerts")
+  notifications     Notification[]
+  chatbotMessages   ChatbotMessage[]
+
+  // New relations
+  schedules       Schedule[]
+  reviewsGiven    Review[]     @relation("Reviewer")
+  reviewsReceived Review[]     @relation("Reviewee")
+  studyStreak     StudyStreak?
+  streakLogs      StreakLog[]
 }
-
-
 
 enum SystemRole {
   MODERATOR
@@ -66,33 +71,34 @@ enum RideStatus {
 }
 
 model Ride {
-  id                  String       @id @default(uuid())
+  id                  String     @id @default(uuid())
   driverId            String
-  driver              User         @relation("DriverRides", fields: [driverId], references: [id])
+  driver              User       @relation("DriverRides", fields: [driverId], references: [id])
   pickupLocation      String
   pickupLat           Float?
   pickupLng           Float?
   destinationLocation String
   destLat             Float?
   destLng             Float?
-  distance            Float?       // in meters or km
-  duration            Int?         // in seconds or minutes
+  distance            Float? // in meters or km
+  duration            Int? // in seconds or minutes
   departureAt         DateTime
   seatsAvailable      Int
-  price               Decimal      @default(0) @db.Decimal(12, 2)
+  price               Decimal    @default(0) @db.Decimal(12, 2)
   vehicleType         String
   vehicleName         String?
-  genderPreference    String?      @default("any")
-  mode                Mode         @default(COMMUNITY)
-  status              RideStatus   @default(PENDING)
-  notes               String?      @db.Text
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
+  genderPreference    String?    @default("any")
+  mode                Mode       @default(COMMUNITY)
+  status              RideStatus @default(PENDING)
+  notes               String?    @db.Text
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
 
   // Relations
-  passengers          RidePassenger[]
-  conversations       Conversation[]
-  sosAlerts           SOSAlert[]
+  passengers    RidePassenger[]
+  conversations Conversation[]
+  sosAlerts     SOSAlert[]
+  reviews       Review[]
 
   @@index([driverId])
   @@index([status, departureAt, driverId])
@@ -118,12 +124,12 @@ model RidePassenger {
 }
 
 model Conversation {
-  id              String      @id @default(uuid())
+  id              String    @id @default(uuid())
   rideId          String?
-  ride            Ride?       @relation(fields: [rideId], references: [id])
+  ride            Ride?     @relation(fields: [rideId], references: [id])
   lastMessageAt   DateTime?
-  lastMessageText String?     @db.Text
-  createdAt       DateTime    @default(now())
+  lastMessageText String?   @db.Text
+  createdAt       DateTime  @default(now())
 
   // Relations
   participants ConversationParticipant[]
@@ -234,6 +240,8 @@ enum NotificationType {
   RIDE_REJECTED
   NEW_JOIN_REQUEST
   RIDE_CANCELLED
+  RIDE_COMPLETED
+  RIDE_INVITE
   SYSTEM
 }
 
@@ -249,4 +257,86 @@ model Notification {
   createdAt DateTime         @default(now())
 
   @@index([userId, isRead])
+}
+
+// ==========================================
+// THỜI KHOÁ BIỂU (SCHEDULE)
+// ==========================================
+enum DayOfWeek {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+model Schedule {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  subjectName String?
+  room        String?
+  building    String?
+  dayOfWeek   DayOfWeek
+  startTime   String // Format: "HH:mm" (vd "07:30")
+  endTime     String // Format: "HH:mm" (vd "09:30")
+  startDate   DateTime?
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ==========================================
+// ĐÁNH GIÁ (REVIEW)
+// ==========================================
+model Review {
+  id         String   @id @default(uuid())
+  rideId     String
+  ride       Ride     @relation(fields: [rideId], references: [id])
+  reviewerId String
+  reviewer   User     @relation("Reviewer", fields: [reviewerId], references: [id])
+  revieweeId String
+  reviewee   User     @relation("Reviewee", fields: [revieweeId], references: [id])
+  rating     Int
+  comment    String?
+  createdAt  DateTime @default(now())
+
+  @@unique([rideId, reviewerId, revieweeId])
+  @@index([revieweeId])
+}
+
+// ==========================================
+// CHUỖI STREAK (STUDY STREAK)
+// ==========================================
+model StudyStreak {
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+  currentStreak Int       @default(0)
+  longestStreak Int       @default(0)
+  lastStudyDate DateTime?
+  isFrozen      Boolean   @default(false)
+  frozenAt      DateTime?
+  updatedAt     DateTime  @updatedAt
+}
+
+enum StreakStatus {
+  ATTENDED
+  MISSED
+  FROZEN
+}
+
+model StreakLog {
+  id        String       @id @default(uuid())
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  date      DateTime
+  status    StreakStatus
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, date])
 }

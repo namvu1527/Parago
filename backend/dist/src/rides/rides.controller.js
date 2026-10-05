@@ -50,6 +50,20 @@ let RidesController = class RidesController {
             throw e;
         }
     }
+    async complete(id, req) {
+        try {
+            return await this.ridesService.completeRide(id, req.user.id);
+        }
+        catch (e) {
+            if (e.message === 'Forbidden')
+                throw new common_1.ForbiddenException('Bạn không có quyền hoàn thành chuyến đi này');
+            if (e.message === 'Ride not found')
+                throw new common_1.NotFoundException('Không tìm thấy chuyến đi');
+            if (e.message === 'Invalid status')
+                throw new common_1.ConflictException('Trạng thái chuyến đi không hợp lệ');
+            throw e;
+        }
+    }
     async remove(id, req) {
         try {
             return await this.ridesService.deleteRide(id, req.user.id, req.user.systemRole);
@@ -109,6 +123,24 @@ let RidesController = class RidesController {
             throw e;
         }
     }
+    async invitePreviousPassenger(rideId, passengerId, req) {
+        try {
+            return await this.ridesService.invitePreviousPassenger(rideId, req.user.id, passengerId);
+        }
+        catch (e) {
+            if (e.message === 'Ride not found')
+                throw new common_1.NotFoundException('Không tìm thấy chuyến đi');
+            if (e.message === 'Forbidden')
+                throw new common_1.ForbiddenException('Bạn không phải tài xế chuyến này');
+            throw new Error(e.message);
+        }
+    }
+    async bulkCreateFromSchedules(createBulkDto, req) {
+        return this.ridesService.bulkCreateFromSchedules(req.user.id, createBulkDto);
+    }
+    async getSuggestedRidesBySchedules(req) {
+        return this.ridesService.getSuggestedRidesBySchedules(req.user.id);
+    }
 };
 exports.RidesController = RidesController;
 __decorate([
@@ -150,6 +182,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], RidesController.prototype, "cancel", null);
 __decorate([
+    (0, common_1.Patch)(':id/complete'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], RidesController.prototype, "complete", null);
+__decorate([
     (0, common_1.Delete)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
@@ -183,6 +223,30 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], RidesController.prototype, "cancelJoinRequest", null);
+__decorate([
+    (0, common_1.Post)(':id/invite'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('passengerId')),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], RidesController.prototype, "invitePreviousPassenger", null);
+__decorate([
+    (0, common_1.Post)('bulk-from-schedules'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], RidesController.prototype, "bulkCreateFromSchedules", null);
+__decorate([
+    (0, common_1.Get)('suggested-by-schedules'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], RidesController.prototype, "getSuggestedRidesBySchedules", null);
 exports.RidesController = RidesController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Controller)('rides'),

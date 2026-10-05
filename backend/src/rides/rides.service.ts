@@ -146,6 +146,78 @@ export class RidesService {
     });
   }
 
+  async completeRide(rideId: string, userId: string) {
+    const ride = await this.prisma.ride.findUnique({ 
+      where: { id: rideId },
+      include: {
+        passengers: { where: { status: 'ACCEPTED' } },
+        driver: true,
+      }
+    });
+    
+    if (!ride) throw new Error("Ride not found");
+    if (ride.driverId !== userId) {
+      throw new Error("Forbidden");
+    }
+    if (ride.status !== 'PENDING') {
+      throw new Error("Invalid status");
+    }
+
+    const txOps = [];
+
+    // 1. Update ride status
+    txOps.push(this.prisma.ride.update({
+      where: { id: rideId },
+      data: { status: 'COMPLETED' }
+    }));
+
+    // 2. Eco points calculation
+    let driverPoints = ride.passengers.length * 5;
+    if (ride.price === null || Number(ride.price) === 0 || ride.mode === 'COMMUNITY') {
+      driverPoints += 5;
+    }
+
+    if (driverPoints > 0) {
+      txOps.push(this.prisma.user.update({
+        where: { id: ride.driverId },
+        data: { ecoPoints: { increment: driverPoints } }
+      }));
+    }
+
+    for (const p of ride.passengers) {
+      txOps.push(this.prisma.user.update({
+        where: { id: p.passengerId },
+        data: { ecoPoints: { increment: 10 } }
+      }));
+    }
+
+    const [updatedRide] = await this.prisma.$transaction(txOps);
+
+    // Send notifications to all accepted passengers to review driver
+    for (const p of ride.passengers) {
+      await this.notificationsService.createNotification(
+        p.passengerId,
+        'Chuyến đi hoàn thành! 🌟',
+        `Hãy đánh giá tài xế ${ride.driver.name}`,
+        'RIDE_COMPLETED',
+        `/rides/my`
+      );
+    }
+
+    // Send notification to driver to review passengers
+    if (ride.passengers.length > 0) {
+      await this.notificationsService.createNotification(
+        ride.driverId,
+        'Chuyến đi hoàn thành! 🌟',
+        'Đừng quên đánh giá các hành khách đi cùng',
+        'RIDE_COMPLETED',
+        `/rides/my`
+      );
+    }
+
+    return updatedRide;
+  }
+
   async deleteRide(rideId: string, userId: string, systemRole: string) {
     const ride = await this.prisma.ride.findUnique({ 
       where: { id: rideId },
@@ -265,10 +337,7 @@ export class RidesService {
       
       // Giảm số ghế trống nếu đang tính toán động (tuỳ schema, hiện tại schema của em không có hàm giảm trực tiếp, nên ta có thể chỉ cần check lúc join)
       // Nếu có field seatsAvailable:
-      await this.prisma.ride.update({
-        where: { id: rideId },
-        data: { seatsAvailable: { decrement: 1 } }
-      });
+      // Removed decrement to keep seatsAvailable as totalSeats. Available seats is calculated dynamically.
     }
 
     // Notify passenger
@@ -298,6 +367,7 @@ export class RidesService {
     });
     if (!rp) throw new Error("Request not found");
     if (rp.status === 'REJECTED') throw new Error("Cannot cancel rejected request");
+    if (rp.status === 'ACCEPTED') throw new Error("Cannot cancel accepted request");
 
     // Delete the request
     await this.prisma.ridePassenger.delete({
@@ -326,6 +396,10 @@ export class RidesService {
         include: {
           passengers: {
             include: { passenger: { select: { name: true, avatarUrl: true } } }
+          },
+          reviews: {
+            where: { reviewerId: userId },
+            select: { revieweeId: true }
           }
         }
       });
@@ -335,7 +409,11 @@ export class RidesService {
         include: {
           ride: {
             include: {
-              driver: { select: { name: true, avatarUrl: true } }
+              driver: { select: { id: true, name: true, avatarUrl: true } },
+              reviews: {
+                where: { reviewerId: userId },
+                select: { revieweeId: true }
+              }
             }
           }
         },
@@ -349,4 +427,85 @@ export class RidesService {
       }));
     }
   }
+
+  async invitePreviousPassenger(rideId: string, driverId: string, passengerId: string) {
+    const ride = await this.prisma.ride.findUnique({
+      where: { id: rideId },
+      include: { driver: true }
+    });
+    
+    if (!ride) throw new Error("Ride not found");
+    if (ride.driverId !== driverId) throw new Error("Forbidden");
+    
+    // Check if passenger is already in this ride
+    const existing = await this.prisma.ridePassenger.findFirst({
+      where: { rideId, passengerId }
+    });
+    
+    if (existing) {
+      throw new Error("Người này đã có trong danh sách yêu cầu / chuyến đi");
+    }
+    
+    // Send RIDE_INVITE notification
+    const time = new Date(ride.departureAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    await this.notificationsService.createNotification(
+      passengerId,
+      `Lời mời đi chung từ ${ride.driver.name}`,
+      `Tài xế ${ride.driver.name} mời bạn tham gia chuyến đi ${ride.pickupLocation} → ${ride.destinationLocation} lúc ${time}`,
+      'RIDE_INVITE',
+      `/rides/${rideId}`
+    );
+    
+    return { success: true };
+  }
+
+  async bulkCreateFromSchedules(userId: string, data: any) {
+    const rides = [];
+    for (const d of data.dates) {
+      const departureTime = new Date(d);
+      rides.push({
+        driverId: userId,
+        pickupLocation: data.pickupLocation,
+        destinationLocation: data.destinationLocation,
+        departureAt: departureTime,
+        seatsAvailable: data.seats,
+        price: data.price,
+        mode: data.mode,
+        vehicleType: 'MOTORBIKE'
+      });
+    }
+    await this.prisma.ride.createMany({ data: rides });
+    return { success: true, count: rides.length };
+  }
+
+  async getSuggestedRidesBySchedules(userId: string) {
+    const schedules = await this.prisma.schedule.findMany({ where: { userId, isActive: true } });
+    const now = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(now.getDate() + 7);
+    const rides = await this.prisma.ride.findMany({
+      where: { status: 'PENDING', departureAt: { gte: now, lte: nextWeek } },
+      include: { driver: { select: { id: true, name: true, avatarUrl: true, rating: true, university: true } } }
+    });
+    const suggested = [];
+    const dayMap = { MON: 1, TUE: 2, WED: 3, THU: 4, FRI: 5, SAT: 6, SUN: 0 };
+    for (const r of rides) {
+      if (r.driverId === userId) continue;
+      const dTime = new Date(r.departureAt);
+      const dDay = dTime.getDay();
+      const dMins = dTime.getHours() * 60 + dTime.getMinutes();
+      for (const s of schedules) {
+        if (dayMap[s.dayOfWeek] === dDay) {
+          const [h, m] = s.startTime.split(':').map(Number);
+          const sMins = h * 60 + m;
+          if (dMins >= sMins - 90 && dMins <= sMins - 10) {
+            suggested.push(r);
+            break;
+          }
+        }
+      }
+    }
+    return suggested;
+  }
 }
+

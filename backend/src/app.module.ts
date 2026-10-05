@@ -13,6 +13,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SchedulesModule } from './schedules/schedules.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { NotificationsModule } from './notifications/notifications.module';
     RidesModule,
     MessagesModule,
     NotificationsModule,
+    SchedulesModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [

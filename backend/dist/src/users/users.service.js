@@ -32,6 +32,26 @@ let UsersService = class UsersService {
             data,
         });
     }
+    async getPreviousPassengers(driverId) {
+        const rides = await this.prisma.ride.findMany({
+            where: { driverId },
+            include: {
+                passengers: {
+                    where: { status: 'ACCEPTED' },
+                    include: { passenger: { select: { id: true, name: true, avatarUrl: true, rating: true, university: true } } }
+                }
+            }
+        });
+        const passengersMap = new Map();
+        rides.forEach(ride => {
+            ride.passengers.forEach(p => {
+                if (!passengersMap.has(p.passengerId)) {
+                    passengersMap.set(p.passengerId, p.passenger);
+                }
+            });
+        });
+        return Array.from(passengersMap.values());
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([

@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { AppLayout, AppHeader } from "@/components/layout";
-import { RideCard } from "@/components/ui/RideCard";
 import { apiClient } from "@/lib/api-client";
 import { useAuthStore } from "@/store/auth-store";
-import { motion } from "framer-motion";
-import { IconCar, IconUser, IconAlertCircle } from "@tabler/icons-react";
+import { IconCar, IconUser } from "@tabler/icons-react";
+import { DriverRidesTab } from "@/components/features/rides/DriverRidesTab";
+import { PassengerRidesTab } from "@/components/features/rides/PassengerRidesTab";
 
 export default function MyRidesPage() {
   const [activeTab, setActiveTab] = useState<"driver" | "passenger">("driver");
@@ -14,37 +14,35 @@ export default function MyRidesPage() {
   const [loading, setLoading] = useState(true);
   const user = useAuthStore((state) => state.user);
 
-  useEffect(() => {
+  const fetchMyRides = useCallback(async () => {
     if (!user) return;
-    
-    const fetchMyRides = async () => {
-      setLoading(true);
-      try {
-        const res = await apiClient.get(`/rides/my?role=${activeTab}`);
-        // For driver, parse some fields properly if needed
-        const data = res.data.map((r: any) => ({
-          ...r,
-          pickupShort: r.pickupLocation?.split(",")[0],
-          destinationShort: r.destinationLocation?.split(",")[0],
-          date: r.departureAt ? new Date(r.departureAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '',
-          departureTime: r.departureAt ? new Date(r.departureAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
-        }));
-        setRides(data);
-      } catch (err) {
-        console.error("Lỗi khi tải chuyến đi", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMyRides();
+    setLoading(true);
+    try {
+      const res = await apiClient.get(`/rides/my?role=${activeTab}`);
+      const data = res.data.map((r: any) => ({
+        ...r,
+        pickupShort: r.pickupLocation?.split(",")[0],
+        destinationShort: r.destinationLocation?.split(",")[0],
+        date: r.departureAt ? new Date(r.departureAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }) : '',
+        departureTime: r.departureAt ? new Date(r.departureAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
+      }));
+      setRides(data);
+    } catch (err) {
+      console.error("Lỗi khi tải chuyến đi", err);
+    } finally {
+      setLoading(false);
+    }
   }, [activeTab, user]);
+
+  useEffect(() => {
+    fetchMyRides();
+  }, [fetchMyRides]);
 
   return (
     <AppLayout>
       <AppHeader title="Chuyến đi của tôi" showBack={false} />
 
-      <div className="max-w-2xl mx-auto px-4 py-4 pb-24">
+      <div className="max-w-2xl mx-auto px-4 py-4 pb-24 h-full">
         {/* TABS */}
         <div className="flex bg-surface-100 dark:bg-surface-200 p-1 rounded-2xl mb-6">
           <button
@@ -56,7 +54,7 @@ export default function MyRidesPage() {
             onClick={() => setActiveTab("driver")}
           >
             <IconCar size={18} />
-            Tôi lái
+            Tôi đăng
           </button>
           <button
             className={`flex-1 flex justify-center items-center gap-2 py-2.5 text-sm font-semibold rounded-xl transition-all ${
@@ -67,37 +65,23 @@ export default function MyRidesPage() {
             onClick={() => setActiveTab("passenger")}
           >
             <IconUser size={18} />
-            Tôi đi
+            Tôi ghép
           </button>
         </div>
 
-        {/* LIST */}
-        {loading ? (
-          <div className="text-center py-10 text-[var(--text-muted)]">Đang tải dữ liệu...</div>
-        ) : rides.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-16 px-4">
-            <div className="w-16 h-16 rounded-full bg-surface-100 flex items-center justify-center text-surface-400 mb-4">
-              <IconAlertCircle size={32} />
-            </div>
-            <h3 className="text-lg font-semibold text-[var(--text-heading)] mb-2">Chưa có chuyến đi nào</h3>
-            <p className="text-sm text-[var(--text-muted)] max-w-sm">
-              {activeTab === "driver" 
-                ? "Bạn chưa tạo chuyến đi nào với vai trò tài xế." 
-                : "Bạn chưa gửi yêu cầu ghép chuyến nào."}
-            </p>
-          </div>
+        {/* TABS CONTENT */}
+        {activeTab === "driver" ? (
+          <DriverRidesTab 
+            rides={rides} 
+            loading={loading} 
+            onRefresh={fetchMyRides} 
+          />
         ) : (
-          <div className="space-y-4">
-            {rides.map((ride, idx) => (
-              <RideCard 
-                key={ride.id} 
-                ride={ride} 
-                index={idx} 
-                isMyRequest={activeTab === "passenger"} 
-                showAction={true}
-              />
-            ))}
-          </div>
+          <PassengerRidesTab 
+            rides={rides} 
+            loading={loading} 
+            onRefresh={fetchMyRides} 
+          />
         )}
       </div>
     </AppLayout>
