@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { RideCard } from "@/components/ui/RideCard";
 import { IconSearch } from "@tabler/icons-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { apiClient } from "@/lib/api-client";
 import { toast } from "sonner";
