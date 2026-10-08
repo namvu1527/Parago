@@ -22,6 +22,7 @@ const messages_module_1 = require("./messages/messages.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const schedules_module_1 = require("./schedules/schedules.module");
 const reviews_module_1 = require("./reviews/reviews.module");
+const streaks_module_1 = require("./streaks/streaks.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -40,6 +41,7 @@ exports.AppModule = AppModule = __decorate([
             notifications_module_1.NotificationsModule,
             schedules_module_1.SchedulesModule,
             reviews_module_1.ReviewsModule,
+            streaks_module_1.StreaksModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

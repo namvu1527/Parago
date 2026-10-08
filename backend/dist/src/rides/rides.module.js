@@ -13,12 +13,13 @@ const rides_service_1 = require("./rides.service");
 const prisma_module_1 = require("../prisma/prisma.module");
 const notifications_module_1 = require("../notifications/notifications.module");
 const messages_module_1 = require("../messages/messages.module");
+const streaks_module_1 = require("../streaks/streaks.module");
 let RidesModule = class RidesModule {
 };
 exports.RidesModule = RidesModule;
 exports.RidesModule = RidesModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, notifications_module_1.NotificationsModule, (0, common_1.forwardRef)(() => messages_module_1.MessagesModule)],
+        imports: [prisma_module_1.PrismaModule, notifications_module_1.NotificationsModule, (0, common_1.forwardRef)(() => messages_module_1.MessagesModule), streaks_module_1.StreaksModule],
         controllers: [rides_controller_1.RidesController],
         providers: [rides_service_1.RidesService],
         exports: [rides_service_1.RidesService],

@@ -2,11 +2,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateRideDto } from './dto/create-ride.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MessagesService } from '../messages/messages.service';
+import { StreaksService } from '../streaks/streaks.service';
 export declare class RidesService {
     private readonly prisma;
     private readonly notificationsService;
     private readonly messagesService;
-    constructor(prisma: PrismaService, notificationsService: NotificationsService, messagesService: MessagesService);
+    private readonly streaksService;
+    constructor(prisma: PrismaService, notificationsService: NotificationsService, messagesService: MessagesService, streaksService: StreaksService);
     createRide(driverId: string, dto: CreateRideDto): Promise<{
         id: string;
         createdAt: Date;
@@ -141,6 +143,8 @@ export declare class RidesService {
         driverId: string;
     }>;
     completeRide(rideId: string, userId: string): Promise<{
+        streakIncreased: boolean | undefined;
+        newStreak: number | undefined;
         id: string;
         name: string;
         email: string;
@@ -163,6 +167,8 @@ export declare class RidesService {
         createdAt: Date;
         updatedAt: Date;
     } | {
+        streakIncreased: boolean | undefined;
+        newStreak: number | undefined;
         id: string;
         createdAt: Date;
         updatedAt: Date;

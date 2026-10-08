@@ -204,6 +204,8 @@ export declare class RidesController {
         driverId: string;
     }>;
     complete(id: string, req: any): Promise<{
+        streakIncreased: boolean | undefined;
+        newStreak: number | undefined;
         id: string;
         name: string;
         email: string;
@@ -226,6 +228,8 @@ export declare class RidesController {
         createdAt: Date;
         updatedAt: Date;
     } | {
+        streakIncreased: boolean | undefined;
+        newStreak: number | undefined;
         id: string;
         createdAt: Date;
         updatedAt: Date;

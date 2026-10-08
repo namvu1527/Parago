@@ -188,8 +188,15 @@ export const DriverRidesTab: React.FC<DriverRidesTabProps> = ({ rides, loading, 
                         onClick={async () => {
                           if (!confirm("Xác nhận hoàn thành chuyến đi này?")) return;
                           try {
-                            await apiClient.patch(`/rides/${ride.id}/complete`);
-                            toast.success("Chuyến đi đã hoàn thành");
+                            const res = await apiClient.patch(`/rides/${ride.id}/complete`);
+                            if (res.data.streakIncreased) {
+                              toast.success(`Chuyến đi đã hoàn thành! Bạn đạt chuỗi ${res.data.newStreak} ngày đi học liên tiếp 🔥`, { duration: 5000 });
+                              import('canvas-confetti').then((confetti) => {
+                                confetti.default({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                              });
+                            } else {
+                              toast.success('Chuyến đi đã hoàn thành');
+                            }
                             onRefresh();
                           } catch (err: any) {
                             toast.error(err.response?.data?.message || "Không thể hoàn thành chuyến đi");

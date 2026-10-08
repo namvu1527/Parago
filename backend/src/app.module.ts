@@ -15,6 +15,7 @@ import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SchedulesModule } from './schedules/schedules.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { StreaksModule } from './streaks/streaks.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     NotificationsModule,
     SchedulesModule,
     ReviewsModule,
+    StreaksModule,
   ],
   controllers: [AppController],
   providers: [

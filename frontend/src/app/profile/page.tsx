@@ -47,6 +47,11 @@ export default function ProfilePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
   const router = useRouter();
+  const [streak, setStreak] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    apiClient.get('/streaks/me').then(res => setStreak(res.data)).catch(console.error);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -185,6 +190,26 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* STREAKS SECTION */}
+        {streak && (
+          <div className="bg-surface-0 rounded-3xl p-5 border border-surface-200 shadow-sm flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-[var(--text-heading)] flex items-center gap-2">
+                🔥 Chuỗi Đi Học
+              </h3>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                Kỷ lục: {streak.longestStreak} ngày
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="text-right">
+                <div className="text-2xl font-black text-orange-500">{streak.currentStreak}</div>
+                <div className="text-[10px] uppercase font-bold text-orange-500/70">Ngày</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* REVIEWS SECTION */}
         <div className="bg-surface-0 rounded-3xl p-5 border border-surface-200 shadow-sm">

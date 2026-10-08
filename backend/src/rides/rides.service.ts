@@ -4,6 +4,7 @@ import { CreateRideDto } from './dto/create-ride.dto';
 import { Mode } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MessagesService } from '../messages/messages.service';
+import { StreaksService } from '../streaks/streaks.service';
 
 @Injectable()
 export class RidesService {
@@ -11,7 +12,8 @@ export class RidesService {
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
     @Inject(forwardRef(() => MessagesService))
-    private readonly messagesService: MessagesService
+    private readonly messagesService: MessagesService,
+    private readonly streaksService: StreaksService
   ) {}
 
   async createRide(driverId: string, dto: CreateRideDto) {
@@ -193,6 +195,17 @@ export class RidesService {
 
     const [updatedRide] = await this.prisma.$transaction(txOps);
 
+    // Update Streaks
+    let driverStreakResult = null;
+    try {
+      driverStreakResult = await this.streaksService.incrementStreak(ride.driverId, ride.departureAt);
+      for (const p of ride.passengers) {
+        await this.streaksService.incrementStreak(p.passengerId, ride.departureAt);
+      }
+    } catch(err) {
+      console.error('Streak update failed:', err);
+    }
+
     // Send notifications to all accepted passengers to review driver
     for (const p of ride.passengers) {
       await this.notificationsService.createNotification(
@@ -215,7 +228,7 @@ export class RidesService {
       );
     }
 
-    return updatedRide;
+    return { ...updatedRide, streakIncreased: driverStreakResult?.streakIncreased, newStreak: driverStreakResult?.streak?.currentStreak };
   }
 
   async deleteRide(rideId: string, userId: string, systemRole: string) {

@@ -17,14 +17,17 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const messages_service_1 = require("../messages/messages.service");
+const streaks_service_1 = require("../streaks/streaks.service");
 let RidesService = class RidesService {
     prisma;
     notificationsService;
     messagesService;
-    constructor(prisma, notificationsService, messagesService) {
+    streaksService;
+    constructor(prisma, notificationsService, messagesService, streaksService) {
         this.prisma = prisma;
         this.notificationsService = notificationsService;
         this.messagesService = messagesService;
+        this.streaksService = streaksService;
     }
     async createRide(driverId, dto) {
         return this.prisma.ride.create({
@@ -182,13 +185,23 @@ let RidesService = class RidesService {
             }));
         }
         const [updatedRide] = await this.prisma.$transaction(txOps);
+        let driverStreakResult = null;
+        try {
+            driverStreakResult = await this.streaksService.incrementStreak(ride.driverId, ride.departureAt);
+            for (const p of ride.passengers) {
+                await this.streaksService.incrementStreak(p.passengerId, ride.departureAt);
+            }
+        }
+        catch (err) {
+            console.error('Streak update failed:', err);
+        }
         for (const p of ride.passengers) {
             await this.notificationsService.createNotification(p.passengerId, 'Chuyến đi hoàn thành! 🌟', `Hãy đánh giá tài xế ${ride.driver.name}`, 'RIDE_COMPLETED', `/rides/my`);
         }
         if (ride.passengers.length > 0) {
             await this.notificationsService.createNotification(ride.driverId, 'Chuyến đi hoàn thành! 🌟', 'Đừng quên đánh giá các hành khách đi cùng', 'RIDE_COMPLETED', `/rides/my`);
         }
-        return updatedRide;
+        return { ...updatedRide, streakIncreased: driverStreakResult?.streakIncreased, newStreak: driverStreakResult?.streak?.currentStreak };
     }
     async deleteRide(rideId, userId, systemRole) {
         const ride = await this.prisma.ride.findUnique({
@@ -419,6 +432,7 @@ exports.RidesService = RidesService = __decorate([
     __param(2, (0, common_1.Inject)((0, common_1.forwardRef)(() => messages_service_1.MessagesService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
-        messages_service_1.MessagesService])
+        messages_service_1.MessagesService,
+        streaks_service_1.StreaksService])
 ], RidesService);
 //# sourceMappingURL=rides.service.js.map

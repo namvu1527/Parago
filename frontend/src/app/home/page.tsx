@@ -168,6 +168,7 @@ function RideCardSkeleton() {
 export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [rides, setRides] = useState<any[]>([]);
+  const [streak, setStreak] = useState<any>(null);
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest">("newest");
   const user = useAuthStore((state) => state.user);
 
@@ -204,6 +205,7 @@ export default function HomePage() {
     };
     
     fetchRides();
+    apiClient.get('/streaks/me').then(res => setStreak(res.data)).catch(console.error);
   }, []);
 
   const sortedRides = [...rides].sort((a, b) => {
@@ -229,11 +231,15 @@ export default function HomePage() {
               </h2>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right flex flex-col items-end gap-1">
             <Badge variant="success" className="mb-1">
               <IconLeaf size={12} className="mr-1" /> {user?.ecoPoints || 0}
             </Badge>
-            <div className="text-xs text-[var(--text-muted)]">Eco Points</div>
+            {streak && streak.currentStreak > 0 && (
+              <Badge variant="outline" className={cn(streak.currentStreak >= 3 ? "border-orange-500 text-orange-600 bg-orange-50 dark:bg-orange-900/20" : "border-surface-300 text-surface-500", "gap-1")}>
+                🔥 {streak.currentStreak}
+              </Badge>
+            )}
           </div>
         </div>
 

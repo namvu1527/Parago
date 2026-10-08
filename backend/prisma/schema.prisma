@@ -319,9 +319,10 @@ model StudyStreak {
   currentStreak Int       @default(0)
   longestStreak Int       @default(0)
   lastStudyDate DateTime?
-  isFrozen      Boolean   @default(false)
-  frozenAt      DateTime?
-  updatedAt     DateTime  @updatedAt
+  isFrozen         Boolean   @default(false)
+  frozenAt         DateTime?
+  milestonesReached String[] @default([])
+  updatedAt        DateTime  @updatedAt
 }
 
 enum StreakStatus {
